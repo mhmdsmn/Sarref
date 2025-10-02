@@ -24,20 +24,33 @@ jobs:
         node-version: '18'
         cache: 'npm'
         
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          node_modules
+          android/.gradle
+        key: \${{ runner.os }}-deps-\${{ hashFiles('package-lock.json') }}
+        
     - name: Install dependencies
       run: |
-        npm install --legacy-peer-deps
-        npx expo prebuild --platform android
+        npm ci --legacy-peer-deps
         
+    - name: Prebuild Android
+      run: npx expo prebuild --platform android
+      
     - name: Build APK
       run: |
         cd android
         chmod +x ./gradlew
-        ./gradlew assembleDebug --no-daemon
+        ./gradlew clean
+        ./gradlew assembleDebug --no-daemon --stacktrace
         
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: agent-finance-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 7
+        name: agent-finance-app
+        path: |
+          android/app/build/outputs/apk/debug/*.apk
+          android/app/build/outputs/apk/release/*.apk
+        retention-days: 30
