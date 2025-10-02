@@ -3,8 +3,6 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -14,7 +12,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       
-    - name: Setup JDK 11
+    - name: Setup JDK
       uses: actions/setup-java@v3
       with:
         java-version: '11'
@@ -26,36 +24,21 @@ jobs:
         node-version: '18'
         cache: 'npm'
         
-    - name: Install dependencies
-      run: npm install --legacy-peer-deps
-      
-    - name: Prebuild Android project
-      run: npx expo prebuild --platform android
-      
-    - name: Build Debug APK
+    - name: Install dependencies and prebuild
+      run: |
+        npm install --legacy-peer-deps
+        npx expo prebuild --platform android
+        
+    - name: Build APK
       run: |
         cd android
         chmod +x ./gradlew
         ./gradlew clean
         ./gradlew assembleDebug --no-daemon --stacktrace
         
-    - name: Find and Upload APK
+    - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: agent-finance-app-debug
+        name: agent-finance-app
         path: android/app/build/outputs/apk/debug/*.apk
         retention-days: 30
-        
-    - name: Build Release APK (إذا أردت)
-      run: |
-        cd android
-        ./gradlew assembleRelease --no-daemon --stacktrace
-      continue-on-error: true
-      
-    - name: Upload Release APK (إذا نجح)
-      uses: actions/upload-artifact@v3
-      with:
-        name: agent-finance-app-release
-        path: android/app/build/outputs/apk/release/*.apk
-        retention-days: 30
-      if: success()
